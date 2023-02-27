@@ -18,8 +18,8 @@ oneMKL is part of [oneAPI](https://oneapi.io).
     </thead>
     <tbody>
         <tr>
-            <td rowspan=8 align="center">oneMKL interface</td>
-            <td rowspan=8 align="center">oneMKL selector</td>
+            <td rowspan=10 align="center">oneMKL interface</td>
+            <td rowspan=10 align="center">oneMKL selector</td>
             <td align="center"><a href="https://software.intel.com/en-us/oneapi/onemkl">Intel(R) oneAPI Math Kernel Library</a> for x86 CPU</td>
             <td align="center">x86 CPU</td>
         </tr>
@@ -45,6 +45,10 @@ oneMKL is part of [oneAPI](https://oneapi.io).
         </tr>
         <tr>
             <td align="center"><a href="https://rocblas.readthedocs.io/en/rocm-4.5.2/"> AMD rocBLAS</a> for AMD GPU </td>
+            <td align="center">AMD GPU</td>
+        </tr>
+        <tr>
+            <td align="center"><a href="https://github.com/ROCmSoftwarePlatform/rocSOLVER"> AMD rocSOLVER</a> for AMD GPU </td>
             <td align="center">AMD GPU</td>
         </tr>
         <tr>
@@ -89,9 +93,11 @@ oneapi::mkl::blas::column_major::gemm(gpu_queue, transA, transB, m, ...);
 ```
 How to build an application with run-time dispatching:
 
+if OS is Linux, use icpx compiler. If OS is Windows, use icx compiler.
+Linux example:
 ```cmd
-$> dpcpp -fsycl –I$ONEMKL/include app.cpp
-$> dpcpp -fsycl app.o –L$ONEMKL/lib –lonemkl
+$> icpx -fsycl –I$ONEMKL/include app.cpp
+$> icpx -fsycl app.o –L$ONEMKL/lib –lonemkl
 ```
 
 - **Compile-time dispatching**: The application uses a templated backend selector API where the template parameters specify the required backends and third-party libraries and the application is linked with the required oneMKL backend wrapper libraries (libraries can be static or dynamic).
@@ -120,7 +126,7 @@ $> clang++ -fsycl –I$ONEMKL/include app.cpp
 $> clang++ -fsycl app.o –L$ONEMKL/lib –lonemkl_blas_mklcpu –lonemkl_blas_cublas
 ```
 
-*Refer to [Selecting a Compiler](https://oneapi-src.github.io/oneMKL/selecting_a_compiler.html) for the choice between `dpcpp` and `clang++` compilers.*
+*Refer to [Selecting a Compiler](https://oneapi-src.github.io/oneMKL/selecting_a_compiler.html) for the choice between `icpx/icx` and `clang++` compilers.*
 
 ### Supported Configurations:
 
@@ -165,12 +171,12 @@ Supported domains: BLAS, LAPACK, RNG
         </tr>
 	    <tr >
             <td align="center">AMD GPU</td>
-            <td align="center">AMD rocBLAS </td>
+            <td align="center">AMD rocBLAS</td>
             <td align="center">Dynamic, Static</td>
             <td align="center">LLVM*, hipSYCL</td>
         </tr>
         <tr>
-            <td rowspan=3 align="center">LAPACK</td>
+            <td rowspan=4 align="center">LAPACK</td>
             <td align="center">x86 CPU</td>
             <td rowspan=2 align="center">Intel(R) oneAPI Math Kernel Library</td>
             <td align="center">Dynamic, Static</td>
@@ -184,6 +190,12 @@ Supported domains: BLAS, LAPACK, RNG
         <tr>
             <td align="center">NVIDIA GPU</td>
             <td align="center">NVIDIA cuSOLVER</td>
+            <td align="center">Dynamic, Static</td>
+            <td align="center">LLVM*</td>
+        </tr>
+        <tr>
+            <td align="center">AMD GPU</td>
+            <td align="center">AMD rocSOLVER</td>
             <td align="center">Dynamic, Static</td>
             <td align="center">LLVM*</td>
         </tr>
@@ -203,13 +215,13 @@ Supported domains: BLAS, LAPACK, RNG
             <td align="center">NVIDIA GPU</td>
             <td align="center">NVIDIA cuRAND</td>
             <td align="center">Dynamic, Static</td>
-            <td align="center">LLVM*</td>
+            <td align="center">LLVM*, hipSYCL</td>
         </tr>
         <tr>
             <td align="center">AMD GPU</td>
             <td align="center">AMD rocRAND</td>
             <td align="center">Dynamic, Static</td>
-            <td align="center">hipSYCL</td>
+            <td align="center">LLVM*, hipSYCL</td>
         </tr>
     </tbody>
 </table>
@@ -419,6 +431,7 @@ Python | 3.6 or higher | No | *N/A* | *Pre-installed or Installed by user* | [PS
 [NVIDIA CUDA SDK](https://developer.nvidia.com/cublas) | 10.2 | No | *N/A* | *Installed by user* |[End User License Agreement](https://docs.nvidia.com/cuda/eula/index.html)
 [AMD rocBLAS](https://rocblas.readthedocs.io/en/rocm-4.5.2/) | 4.5 | No | *N/A* | *Installed by user* |[AMD License](https://github.com/ROCmSoftwarePlatform/rocBLAS/blob/develop/LICENSE.md)
 [AMD rocRAND](https://github.com/ROCmSoftwarePlatform/rocRAND) | 5.1.0 | No | *N/A* | *Installed by user* |[AMD License](https://github.com/ROCmSoftwarePlatform/rocRAND/blob/develop/LICENSE.txt)
+[AMD rocSOLVER](https://github.com/ROCmSoftwarePlatform/rocSOLVER) | 5.0.0 | No | *N/A* | *Installed by user* |[AMD License](https://github.com/ROCmSoftwarePlatform/rocRAND/blob/develop/LICENSE.txt)
 [NETLIB LAPACK](https://www.netlib.org/) | 3.7.1 | Yes | conan-community | ~/.conan/data or $CONAN_USER_HOME/.conan/data | [BSD like license](http://www.netlib.org/lapack/LICENSE.txt)
 [Sphinx](https://www.sphinx-doc.org/en/master/) | 2.4.4 | Yes | pip | ~/.local/bin (or similar user local directory) | [BSD License](https://github.com/sphinx-doc/sphinx/blob/3.x/LICENSE)
 

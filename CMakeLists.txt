@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2020-2021 Intel Corporation
+# Copyright 2020-2022 Intel Corporation
 # Copyright (C) 2022 Heidelberg University, Engineering Mathematics and Computing Lab (EMCL) and Computing Centre (URZ)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -53,6 +53,7 @@ option(ENABLE_CUSOLVER_BACKEND "" OFF)
 option(ENABLE_ROCBLAS_BACKEND "" OFF)
 option(ENABLE_CURAND_BACKEND "" OFF)
 option(ENABLE_ROCRAND_BACKEND "" OFF)
+option(ENABLE_ROCSOLVER_BACKEND "" OFF)
 option(ENABLE_NETLIB_BACKEND "" OFF)
 set(ONEMKL_SYCL_IMPLEMENTATION "dpc++" CACHE STRING "Name of the SYCL compiler")
 set(HIP_TARGETS "" CACHE STRING "Target HIP architectures")
@@ -77,12 +78,14 @@ if(ENABLE_MKLCPU_BACKEND
 endif()
 if(ENABLE_MKLCPU_BACKEND
         OR ENABLE_MKLGPU_BACKEND
-	OR ENABLE_CUSOLVER_BACKEND)
+        OR ENABLE_CUSOLVER_BACKEND
+        OR ENABLE_ROCSOLVER_BACKEND)
   list(APPEND DOMAINS_LIST "lapack")
 endif()
 if(ENABLE_MKLCPU_BACKEND
         OR ENABLE_MKLGPU_BACKEND
-        OR ENABLE_CURAND_BACKEND)
+        OR ENABLE_CURAND_BACKEND
+        OR ENABLE_ROCRAND_BACKEND)
   list(APPEND DOMAINS_LIST "rng")
 endif()
 if(ENABLE_MKLGPU_BACKEND
@@ -96,21 +99,35 @@ if(CMAKE_CXX_COMPILER OR NOT ONEMKL_SYCL_IMPLEMENTATION STREQUAL "dpc++")
     string(REPLACE "\\" "/" CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER})
   endif()
 else()
-  if(ENABLE_CUBLAS_BACKEND OR ENABLE_CURAND_BACKEND OR ENABLE_ROCBLAS_BACKEND)
+  if(ENABLE_CUBLAS_BACKEND OR ENABLE_CURAND_BACKEND OR ENABLE_ROCBLAS_BACKEND
+	  OR ENABLE_ROCRAND_BACKEND OR ENABLE_ROCSOLVER_BACKEND)
     set(CMAKE_CXX_COMPILER "clang++")
   elseif(ENABLE_MKLGPU_BACKEND)
-    set(CMAKE_CXX_COMPILER "dpcpp")
+    if(UNIX)
+      set(CMAKE_CXX_COMPILER "icpx")
+    else()
+      set(CMAKE_CXX_COMPILER "icx")
+    endif()
   else()
-    find_program(DPCPP_PATH dpcpp)
-    if(DPCPP_PATH)
-      message(STATUS "CXX compiler: dpcpp was found in PATH, using dpcpp")
-      set(CMAKE_CXX_COMPILER "dpcpp")
+    if(UNIX)
+      find_program(ICPX_ICX_PATH icpx)
+    else()
+      find_program(ICPX_ICX_PATH icx)
+    endif()
+    if(ICPX_ICX_PATH)
+      if(UNIX)
+        message(STATUS "CXX compiler: icpx was found in PATH, using icpx")
+        set(CMAKE_CXX_COMPILER "icpx")
+      else()
+        message(STATUS "CXX compiler: icx was found in PATH, using icx")
+        set(CMAKE_CXX_COMPILER "icx")
+      endif()
     else()
       if(WIN32)
-        message(STATUS "CXX compiler: dpcpp was not found in PATH, using clang-cl instead")
+        message(STATUS "CXX compiler: icx was not found in PATH, using clang-cl instead")
         set(CMAKE_CXX_COMPILER "clang-cl")
       else()
-        message(STATUS "CXX compiler: dpcpp was not found in PATH, using clang++ instead")
+        message(STATUS "CXX compiler: icpx was not found in PATH, using clang++ instead")
         set(CMAKE_CXX_COMPILER "clang++")
       endif()
     endif()
@@ -158,7 +175,7 @@ if(WIN32 AND ONEMKL_SYCL_IMPLEMENTATION STREQUAL "dpc++")
 endif()
 
 # Temporary disable sycl 2020 deprecations warnings for cuBLAS and cuSOLVER
-if(ONEMKL_SYCL_IMPLEMENTATION STREQUAL "dpc++" AND (ENABLE_CUBLAS_BACKEND OR ENABLE_CUSOLVER_BACKEND))
+if(ONEMKL_SYCL_IMPLEMENTATION STREQUAL "dpc++" AND (ENABLE_CUBLAS_BACKEND OR ENABLE_CUSOLVER_BACKEND OR ENABLE_ROCSOLVER_BACKEND))
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL2020_DISABLE_DEPRECATION_WARNINGS")
 endif()
 
@@ -219,6 +236,11 @@ else()
     set(USE_ADD_SYCL_TO_TARGET_INTEGRATION false)
     find_package(Compiler REQUIRED)
   endif()
+endif()
+
+if(DEFINED REF_BLAS_ROOT)
+  find_file(REF_BLAS_LIBNAME NAMES blas.dll libblas.so HINTS ${REF_BLAS_ROOT} PATH_SUFFIXES lib lib64)
+  find_file(REF_CBLAS_LIBNAME NAMES cblas.dll libcblas.so HINTS ${REF_BLAS_ROOT} PATH_SUFFIXES lib lib64)
 endif()
 
 # Add source directory and output to bin/

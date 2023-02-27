@@ -191,6 +191,23 @@ void rand_vector(vec &v, int n, int inc) {
         v[i * abs_inc] = rand_scalar<fp>();
 }
 
+template <typename fp>
+oneapi::mkl::transpose rand_trans() {
+    std::int64_t tmp;
+    oneapi::mkl::transpose trans;
+    if ((std::is_same<fp, float>::value) || (std::is_same<fp, double>::value)) {
+        trans = (oneapi::mkl::transpose)(std::rand() % 2);
+    }
+    else {
+        tmp = std::rand() % 3;
+        if (tmp == 2)
+            trans = oneapi::mkl::transpose::conjtrans;
+        else
+            trans = (oneapi::mkl::transpose)tmp;
+    }
+    return trans;
+}
+
 template <typename vec>
 void print_matrix(vec &M, oneapi::mkl::transpose trans, int m, int n, int ld, char *name) {
     std::cout << "Matrix " << name << ":\n";
@@ -471,7 +488,8 @@ bool check_equal(fp x, fp x_ref, int error_mag, std::ostream &out) {
 }
 
 template <typename fp>
-bool check_equal_vector(fp *v, fp *v_ref, int n, int inc, int error_mag, std::ostream &out) {
+bool check_equal_vector(const fp *v, const fp *v_ref, int n, int inc, int error_mag,
+                        std::ostream &out) {
     int abs_inc = std::abs(inc), count = 0;
     bool good = true;
 
@@ -554,8 +572,8 @@ bool check_equal_matrix(acc1 &M, acc2 &M_ref, oneapi::mkl::layout layout, int m,
 }
 
 template <typename fp>
-bool check_equal_matrix(fp *M, fp *M_ref, oneapi::mkl::layout layout, int m, int n, int ld,
-                        int error_mag, std::ostream &out) {
+bool check_equal_matrix(const fp *M, const fp *M_ref, oneapi::mkl::layout layout, int m,
+                        int n, int ld, int error_mag, std::ostream &out) {
     bool good = true;
     int idx, count = 0;
     for (int j = 0; j < n; j++) {

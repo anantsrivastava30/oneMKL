@@ -310,8 +310,44 @@ Building for oneMKL
      ctest
      cmake --install . --prefix <path_to_install_dir>
 
-Building for CUDA
-^^^^^^^^^^^^^^^^^
+Building for CUDA (with hipSYCL)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* On Linux*
+
+With the cuBLAS backend:
+
+.. code-block:: bash
+
+   # Inside <path to onemkl>
+   mkdir build && cd build
+   cmake .. -DENABLE_CUBLAS_BACKEND=True \
+            -DENABLE_MKLGPU_BACKEND=False                                # Disable all backends except for cuBLAS
+            -DENABLE_MKLCPU_BACKEND=False \
+            -DENABLE_NETLIB_BACKEND=False \
+            -DENABLE_ROCBLAS_BACKEND=False \
+            -DHIPSYCL_TARGETS=cuda:sm_75 \                               # Specify the targeted device architectures 
+            -DONEMKL_SYCL_IMPLEMENTATION=hipSYCL \
+            [-DREF_BLAS_ROOT=<reference_blas_install_prefix>]            # required only for testing
+   cmake --build .
+   ctest
+   cmake --install . --prefix <path_to_install_dir>
+
+To build with the cuRAND backend instead simply replace:
+
+.. code-block:: bash
+
+   -DENABLE_CUBLAS_BACKEND=True   \
+
+With:
+
+.. code-block:: bash
+
+   -DENABLE_CURAND_BACKEND=True   \
+
+
+Building for CUDA (with clang++)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * On Linux*
 
@@ -343,11 +379,11 @@ With:
 
    -DENABLE_CURAND_BACKEND=True   \
 
+
 Building for ROCm (with hipSYCL)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 With the AMD rocBLAS backend:
-
 
 * On Linux*
 
@@ -406,6 +442,33 @@ With the AMD rocBLAS backend:
    export SYCL_DEVICE_FILTER=HIP
    ctest
    cmake --install . --prefix <path_to_install_dir>
+
+To build with the rocRAND backend instead simply replace:
+
+.. code-block:: bash
+
+   -DENABLE_ROCBLAS_BACKEND=True   \
+   -DTARGET_DOMAINS=blas
+
+With:
+
+.. code-block:: bash
+
+   -DENABLE_ROCRAND_BACKEND=True   \
+   -DTARGET_DOMAINS=rng
+
+To build with the rocSOLVER backend instead simply replace:
+
+.. code-block:: bash\
+
+   -DENABLE_ROCBLAS_BACKEND=True   \
+   -DTARGET_DOMAINS=blas
+With:
+
+.. code-block:: bash
+
+   -DENABLE_ROCSOLVER_BACKEND=True   \
+   -DTARGET_DOMAINS=lapack
 
 **AMD GPU device architectures**  
 
@@ -521,6 +584,10 @@ CMake.
   ``SYCL_DEVICE_FILTER`` to ``HIP`` and provide ``-DHIP_TARGETS`` according to
   the targeted hardware. This backend has only been tested for the ``gfx90a``
   architecture (MI210) at the time of writing.
+
+.. note::
+  When building with ``BUILD_FUNCTIONAL_TESTS=yes`` (default option) only single CUDA backend can be built
+  (`#270 <https://github.com/oneapi-src/oneMKL/issues/270>`_).
 
 .. _project_cleanup:
 
