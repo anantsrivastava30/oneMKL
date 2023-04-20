@@ -17,34 +17,26 @@
 * SPDX-License-Identifier: Apache-2.0
 *******************************************************************************/
 
-#ifndef _ONEMKL_DFT_MKLCPU_HPP_
-#define _ONEMKL_DFT_MKLCPU_HPP_
-
-#include <cstdint>
-#if __has_include(<sycl/sycl.hpp>)
-#include <sycl/sycl.hpp>
-#else
-#include <CL/sycl.hpp>
-#endif
-
-#include "oneapi/mkl/detail/export.hpp"
-
-#include "oneapi/mkl/types.hpp"
-#include "oneapi/mkl/dft/types.hpp"
 #include "oneapi/mkl/dft/descriptor.hpp"
+#include "../../descriptor.cxx"
+
+#include "oneapi/mkl/dft/detail/mklcpu/onemkl_dft_mklcpu.hpp"
 
 namespace oneapi {
 namespace mkl {
 namespace dft {
-namespace mklcpu {
 
-template<oneapi::mkl::dft::precision prec, oneapi::mkl::dft::domain dom>
-ONEMKL_EXPORT oneapi::mkl::dft::detail::commit_impl* create_commit(
-    oneapi::mkl::dft::descriptor<prec, dom>& desc);
+template <precision prec, domain dom>
+void descriptor<prec, dom>::commit(backend_selector<backend::mklcpu> selector) {
+    queue_ = selector.get_queue();
+    pimpl_.reset(mklcpu::create_commit(*this));
+}
 
-} // namespace mklcpu
-} // namespace dft
-} // namespace mkl
-} // namespace oneapi
+template void descriptor<precision::SINGLE, domain::COMPLEX>::commit(backend_selector<backend::mklcpu>);
+template void descriptor<precision::SINGLE, domain::REAL>::commit(backend_selector<backend::mklcpu>);
+template void descriptor<precision::DOUBLE, domain::COMPLEX>::commit(backend_selector<backend::mklcpu>);
+template void descriptor<precision::DOUBLE, domain::REAL>::commit(backend_selector<backend::mklcpu>);
 
-#endif // _ONEMKL_DFT_MKLCPU_HPP_
+} //namespace dft
+} //namespace mkl
+} //namespace oneapi

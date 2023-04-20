@@ -17,8 +17,8 @@
 * SPDX-License-Identifier: Apache-2.0
 *******************************************************************************/
 
-#ifndef _ONEMKL_DFT_MKLCPU_HPP_
-#define _ONEMKL_DFT_MKLCPU_HPP_
+#ifndef _ONEMKL_DFT_COMMIT_IMPL_HPP_
+#define _ONEMKL_DFT_COMMIT_IMPL_HPP_
 
 #include <cstdint>
 #if __has_include(<sycl/sycl.hpp>)
@@ -27,24 +27,33 @@
 #include <CL/sycl.hpp>
 #endif
 
-#include "oneapi/mkl/detail/export.hpp"
-
-#include "oneapi/mkl/types.hpp"
-#include "oneapi/mkl/dft/types.hpp"
-#include "oneapi/mkl/dft/descriptor.hpp"
-
 namespace oneapi {
 namespace mkl {
 namespace dft {
-namespace mklcpu {
+namespace detail {
 
-template<oneapi::mkl::dft::precision prec, oneapi::mkl::dft::domain dom>
-ONEMKL_EXPORT oneapi::mkl::dft::detail::commit_impl* create_commit(
-    oneapi::mkl::dft::descriptor<prec, dom>& desc);
+class commit_impl {
+public:
+    commit_impl(sycl::queue queue) : queue_(queue), status(false) {}
 
-} // namespace mklcpu
+    commit_impl(const commit_impl& other) : queue_(other.queue_), status(other.status) {}
+
+    virtual ~commit_impl() {}
+
+    sycl::queue& get_queue() {
+        return queue_;
+    }
+
+protected:
+    bool status;
+    sycl::queue queue_;
+};
+
+
+} // namespace detail
 } // namespace dft
 } // namespace mkl
 } // namespace oneapi
 
-#endif // _ONEMKL_DFT_MKLCPU_HPP_
+#endif //_ONEMKL_DFT_COMMIT_IMPL_HPP_
+

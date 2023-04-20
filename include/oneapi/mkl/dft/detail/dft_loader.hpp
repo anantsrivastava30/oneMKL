@@ -17,8 +17,8 @@
 * SPDX-License-Identifier: Apache-2.0
 *******************************************************************************/
 
-#ifndef _ONEMKL_DFT_MKLCPU_HPP_
-#define _ONEMKL_DFT_MKLCPU_HPP_
+#ifndef _ONEMKL_DFT_LOADER_HPP_
+#define _ONEMKL_DFT_LOADER_HPP_
 
 #include <cstdint>
 #if __has_include(<sycl/sycl.hpp>)
@@ -31,20 +31,29 @@
 
 #include "oneapi/mkl/types.hpp"
 #include "oneapi/mkl/dft/types.hpp"
+#include "oneapi/mkl/dft/detail/commit_impl.hpp"
 #include "oneapi/mkl/dft/descriptor.hpp"
 
 namespace oneapi {
 namespace mkl {
 namespace dft {
-namespace mklcpu {
+namespace detail {
 
-template<oneapi::mkl::dft::precision prec, oneapi::mkl::dft::domain dom>
-ONEMKL_EXPORT oneapi::mkl::dft::detail::commit_impl* create_commit(
-    oneapi::mkl::dft::descriptor<prec, dom>& desc);
+ONEMKL_EXPORT commit_impl* create_commit(oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE,
+                                                        oneapi::mkl::dft::domain::COMPLEX>& desc);
 
-} // namespace mklcpu
+ONEMKL_EXPORT commit_impl* create_commit(oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
+                                                        oneapi::mkl::dft::domain::COMPLEX>& desc);
+
+ONEMKL_EXPORT commit_impl* create_commit(oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::SINGLE,
+                                                        oneapi::mkl::dft::domain::REAL>& desc);
+
+ONEMKL_EXPORT commit_impl* create_commit(oneapi::mkl::dft::descriptor<oneapi::mkl::dft::precision::DOUBLE,
+                                                        oneapi::mkl::dft::domain::REAL>& desc);
+
+} // namespace detail
 } // namespace dft
 } // namespace mkl
 } // namespace oneapi
 
-#endif // _ONEMKL_DFT_MKLCPU_HPP_
+#endif //_ONEMKL_DFT_LOADER_HPP_

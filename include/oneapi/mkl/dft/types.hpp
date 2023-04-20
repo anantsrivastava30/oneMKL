@@ -31,6 +31,10 @@ namespace oneapi {
 namespace mkl {
 namespace dft {
 
+typedef int DFT_ERROR;
+
+#define DFT_NOTSET -1
+
 enum class precision { SINGLE, DOUBLE };
 enum class domain { REAL, COMPLEX };
 enum class config_param {
@@ -45,7 +49,6 @@ enum class config_param {
     NUMBER_OF_TRANSFORMS,
 
     COMPLEX_STORAGE,
-    // WHAT IS THE FUTURE OF THIS ??
     REAL_STORAGE,
     CONJUGATE_EVEN_STORAGE,
 
@@ -86,8 +89,9 @@ enum class config_value {
     // Allow/avoid certain usages
     ALLOW,
     AVOID,
-    NONE,
-
+    NONE, 
+    WORKSPACE_INTERNAL,
+    WORKSPACE_EXTERNAL,
     // for config_param::PACKED_FORMAT for storing conjugate-even finite sequence in real containers
     CCE_FORMAT
 
@@ -98,19 +102,22 @@ struct dft_values {
     std::vector<std::int64_t> output_strides;
     double bwd_scale;
     double fwd_scale;
-    std::int64_t number_of_transform;
+    std::int64_t number_of_transforms;
     std::int64_t fwd_dist;
     std::int64_t bwd_dist;
     config_value placement;
     config_value complex_storage;
     config_value conj_even_storage;
+    config_value workspace;
 
-    std::int64_t dimension;
-    config_value domain;
-    config_value precision;
+    std::vector<std::int64_t> dimensions;
+    std::int64_t rank;
+    domain domain;
+    precision precision;
 };
+
 } // namespace dft
-} // namespace mkl 
-} // namespace oneapi 
+} // namespace mkl
+} // namespace oneapi
 
 #endif //_ONEMKL_TYPES_HPP_

@@ -26,6 +26,7 @@
 #include "oneapi/mkl/types.hpp"
 #include "oneapi/mkl/dft/types.hpp"
 
+#include "oneapi/mkl/dft/descriptor.hpp"
 #include "oneapi/mkl/dft/detail/mklcpu/onemkl_dft_mklcpu.hpp"
 
 namespace oneapi {

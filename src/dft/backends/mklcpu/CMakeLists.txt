@@ -20,11 +20,13 @@
 set(LIB_NAME onemkl_dft_mklcpu)
 set(LIB_OBJ ${LIB_NAME}_obj)
 
+set(USE_DPCPP_API ON)
 find_package(MKL REQUIRED)
 
 add_library(${LIB_NAME})
 add_library(${LIB_OBJ} OBJECT
   commit.cpp
+  descriptor.cpp
   forward.cpp
   backward.cpp
   $<$<BOOL:${BUILD_SHARED_LIBS}>: mkl_dft_cpu_wrappers.cpp>
@@ -37,8 +39,10 @@ target_include_directories(${LIB_OBJ}
           ${MKL_INCLUDE}
 )
 
-target_compile_options(${LIB_OBJ} PRIVATE ${ONEMKL_BUILD_COPT} ${MKL_COPT})
-
+target_compile_options(${LIB_OBJ} PRIVATE ${ONEMKL_BUILD_COPT} ${MKL_COPT} -DBUILD_COMP)
+if (USE_ADD_SYCL_TO_TARGET_INTEGRATION)
+  add_sycl_to_target(TARGET ${LIB_OBJ} SOURCES ${SOURCES})
+endif()
 target_link_libraries(${LIB_OBJ} PUBLIC ONEMKL::SYCL::SYCL ${MKL_LINK_SYCL})
 
 set_target_properties(${LIB_OBJ} PROPERTIES

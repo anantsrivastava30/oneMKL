@@ -30,7 +30,7 @@
 #include "oneapi/mkl/dft/types.hpp"
 #include "oneapi/mkl/detail/backend_selector.hpp"
 
-#include "oneapi/mkl/dft/detail/descriptor_impl.hpp"
+#include "oneapi/mkl/dft/detail/commit_impl.hpp"
 
 namespace oneapi {
 namespace mkl {
@@ -60,20 +60,19 @@ public:
 #ifdef ENABLE_MKLGPU_BACKEND
     void commit(backend_selector<backend::mklgpu> selector);
 #endif
-
-    sycl::queue& get_queue() {
-        return queue_;
-    }
+    
+    sycl::queue& get_queue() { return queue_; };
+    dft_values get_values() { return values_; };
 private:
+    std::unique_ptr<detail::commit_impl> pimpl_; // commit only
     sycl::queue queue_;
-    std::unique_ptr<detail::descriptor_impl> pimpl_;
 
     std::int64_t rank_;
-    std::vector<std::int64_t>  dimension_;
+    std::vector<std::int64_t>  dimensions_;
+    
 
-    // descriptor configuration values and structs
-    void* handle_;
-    oneapi::mkl::dft::dft_values values;
+    // descriptor configuration values_ and structs
+    oneapi::mkl::dft::dft_values values_;
 };
 
 } //namespace dft
