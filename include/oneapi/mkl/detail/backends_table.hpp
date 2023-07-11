@@ -51,25 +51,63 @@ static std::map<domain, std::map<device, std::vector<const char*>>> libraries = 
               LIB_NAME("blas_mklcpu"),
 #endif
 #ifdef ENABLE_NETLIB_BACKEND
-              LIB_NAME("blas_netlib")
+              LIB_NAME("blas_netlib"),
+#endif
+#ifdef ENABLE_SYCLBLAS_INTEL_CPU
+              LIB_NAME("blas_syclblas"),
 #endif
           } },
         { device::intelgpu,
           {
 #ifdef ENABLE_MKLGPU_BACKEND
-              LIB_NAME("blas_mklgpu")
+              LIB_NAME("blas_mklgpu"),
+#endif
+#ifdef ENABLE_SYCLBLAS_INTEL_GPU
+              LIB_NAME("blas_syclblas"),
 #endif
           } },
         { device::amdgpu,
           {
 #ifdef ENABLE_ROCBLAS_BACKEND
-              LIB_NAME("blas_rocblas")
+              LIB_NAME("blas_rocblas"),
+#endif
+#ifdef ENABLE_SYCLBLAS_AMD_GPU
+              LIB_NAME("blas_syclblas"),
 #endif
           } },
         { device::nvidiagpu,
           {
 #ifdef ENABLE_CUBLAS_BACKEND
-              LIB_NAME("blas_cublas")
+              LIB_NAME("blas_cublas"),
+#endif
+#ifdef ENABLE_SYCLBLAS_NVIDIA_GPU
+              LIB_NAME("blas_syclblas"),
+#endif
+          } } } },
+
+    { domain::dft,
+      { { device::x86cpu,
+          {
+#ifdef ENABLE_MKLCPU_BACKEND
+              LIB_NAME("dft_mklcpu")
+#endif
+          } },
+        { device::intelgpu,
+          {
+#ifdef ENABLE_MKLGPU_BACKEND
+              LIB_NAME("dft_mklgpu")
+#endif
+          } },
+        { device::amdgpu,
+          {
+#ifdef ENABLE_ROCFFT_BACKEND
+              LIB_NAME("dft_rocfft"),
+#endif
+          } },
+        { device::nvidiagpu,
+          {
+#ifdef ENABLE_CUFFT_BACKEND
+              LIB_NAME("dft_cufft")
 #endif
           } } } },
 
@@ -136,6 +174,7 @@ static std::map<domain, std::map<device, std::vector<const char*>>> libraries = 
 
 static std::map<domain, const char*> table_names = { { domain::blas, "mkl_blas_table" },
                                                      { domain::lapack, "mkl_lapack_table" },
+                                                     { domain::dft, "mkl_dft_table" },
                                                      { domain::rng, "mkl_rng_table" } };
 
 } //namespace mkl

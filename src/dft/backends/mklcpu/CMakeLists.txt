@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2022 Intel Corporation
+# Copyright 2023 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,13 +20,15 @@
 set(LIB_NAME onemkl_dft_mklcpu)
 set(LIB_OBJ ${LIB_NAME}_obj)
 
-find_package(MKL REQUIRED)
+include(WarningsUtils)
 
 add_library(${LIB_NAME})
 add_library(${LIB_OBJ} OBJECT
   commit.cpp
+  descriptor.cpp
   forward.cpp
   backward.cpp
+  compute_signature.cpp
   $<$<BOOL:${BUILD_SHARED_LIBS}>: mkl_dft_cpu_wrappers.cpp>
 )
 
@@ -34,12 +36,26 @@ target_include_directories(${LIB_OBJ}
   PRIVATE ${PROJECT_SOURCE_DIR}/include
           ${PROJECT_SOURCE_DIR}/src
           ${CMAKE_BINARY_DIR}/bin
-          ${MKL_INCLUDE}
 )
 
-target_compile_options(${LIB_OBJ} PRIVATE ${ONEMKL_BUILD_COPT} ${MKL_COPT})
+target_compile_options(${LIB_OBJ} PRIVATE ${ONEMKL_BUILD_COPT})
+if (USE_ADD_SYCL_TO_TARGET_INTEGRATION)
+  add_sycl_to_target(TARGET ${LIB_OBJ} SOURCES ${SOURCES})
+endif()
 
-target_link_libraries(${LIB_OBJ} PUBLIC ONEMKL::SYCL::SYCL ${MKL_LINK_SYCL})
+if(TARGET MKL::MKL_SYCL::DFT)
+  target_link_libraries(${LIB_OBJ}
+    PUBLIC ONEMKL::SYCL::SYCL
+    PUBLIC MKL::MKL_SYCL::DFT
+    PRIVATE onemkl_warnings
+  )
+else()
+  target_link_libraries(${LIB_OBJ}
+    PUBLIC ONEMKL::SYCL::SYCL
+    PUBLIC MKL::MKL_DPCPP
+    PRIVATE onemkl_warnings
+  )
+endif()
 
 set_target_properties(${LIB_OBJ} PROPERTIES
   POSITION_INDEPENDENT_CODE ON

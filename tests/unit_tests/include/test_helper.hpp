@@ -119,6 +119,33 @@
 #define TEST_RUN_AMDGPU_ROCSOLVER_SELECT(q, func, ...)
 #endif
 
+#ifdef ENABLE_SYCLBLAS_BACKEND
+#define TEST_RUN_SYCLBLAS_SELECT(q, func, ...) \
+    func(oneapi::mkl::backend_selector<oneapi::mkl::backend::syclblas>{ q }, __VA_ARGS__)
+#else
+#define TEST_RUN_SYCLBLAS_SELECT(q, func, ...)
+#endif
+
+#ifdef ENABLE_CUFFT_BACKEND
+#define TEST_RUN_NVIDIAGPU_CUFFT_SELECT_NO_ARGS(q, func) \
+    func(oneapi::mkl::backend_selector<oneapi::mkl::backend::cufft>{ q })
+#define TEST_RUN_NVIDIAGPU_CUFFT_SELECT(q, func, ...) \
+    func(oneapi::mkl::backend_selector<oneapi::mkl::backend::cufft>{ q }, __VA_ARGS__)
+#else
+#define TEST_RUN_NVIDIAGPU_CUFFT_SELECT_NO_ARGS(q, func)
+#define TEST_RUN_NVIDIAGPU_CUFFT_SELECT(q, func, ...)
+#endif
+
+#ifdef ENABLE_ROCFFT_BACKEND
+#define TEST_RUN_AMDGPU_ROCFFT_SELECT_NO_ARGS(q, func) \
+    func(oneapi::mkl::backend_selector<oneapi::mkl::backend::rocfft>{ q })
+#define TEST_RUN_AMDGPU_ROCFFT_SELECT(q, func, ...) \
+    func(oneapi::mkl::backend_selector<oneapi::mkl::backend::rocfft>{ q }, __VA_ARGS__)
+#else
+#define TEST_RUN_AMDGPU_ROCFFT_SELECT_NO_ARGS(q, func)
+#define TEST_RUN_AMDGPU_ROCFFT_SELECT(q, func, ...)
+#endif
+
 #ifndef __HIPSYCL__
 #define CHECK_HOST_OR_CPU(q) q.get_device().is_cpu()
 #else
@@ -127,7 +154,7 @@
 
 #define TEST_RUN_CT_SELECT_NO_ARGS(q, func)                                \
     do {                                                                   \
-        if (CHECK_HOST_OR_CPU(q))   {                                      \
+        if (CHECK_HOST_OR_CPU(q)) {                                        \
             TEST_RUN_INTELCPU_SELECT_NO_ARGS(q, func);                     \
         }                                                                  \
         else if (q.get_device().is_gpu()) {                                \
@@ -135,6 +162,12 @@
                 q.get_device().get_info<sycl::info::device::vendor_id>()); \
             if (vendor_id == INTEL_ID) {                                   \
                 TEST_RUN_INTELGPU_SELECT_NO_ARGS(q, func);                 \
+            }                                                              \
+            else if (vendor_id == NVIDIA_ID) {                             \
+                TEST_RUN_NVIDIAGPU_CUFFT_SELECT_NO_ARGS(q, func);          \
+            }                                                              \
+            else if (vendor_id == AMD_ID) {                                \
+                TEST_RUN_AMDGPU_ROCFFT_SELECT_NO_ARGS(q, func);            \
             }                                                              \
         }                                                                  \
     } while (0);
@@ -157,8 +190,10 @@
                 TEST_RUN_AMDGPU_ROCBLAS_SELECT(q, func, __VA_ARGS__);      \
                 TEST_RUN_AMDGPU_ROCRAND_SELECT(q, func, __VA_ARGS__);      \
                 TEST_RUN_AMDGPU_ROCSOLVER_SELECT(q, func, __VA_ARGS__);    \
+                TEST_RUN_AMDGPU_ROCFFT_SELECT(q, func, __VA_ARGS__);       \
             }                                                              \
         }                                                                  \
+        TEST_RUN_SYCLBLAS_SELECT(q, func, __VA_ARGS__);                    \
     } while (0);
 
 void print_error_code(sycl::exception const &e);
@@ -217,6 +252,7 @@ static inline void aligned_free(void *p) {
 
 /* Support for Unified Shared Memory allocations for different backends */
 static inline void *malloc_shared(size_t align, size_t size, sycl::device dev, sycl::context ctx) {
+    (void)align;
 #ifdef _WIN64
     return sycl::malloc_shared(size, dev, ctx);
 #else
@@ -229,7 +265,25 @@ static inline void *malloc_shared(size_t align, size_t size, sycl::device dev, s
 #endif
 }
 
+static inline void *malloc_device(size_t align, size_t size, sycl::device dev, sycl::context ctx) {
+    (void)align;
+#ifdef _WIN64
+    return sycl::malloc_device(size, dev, ctx);
+#else
+#if defined(ENABLE_CUBLAS_BACKEND) || defined(ENABLE_ROCBLAS_BACKEND)
+    return sycl::aligned_alloc_device(align, size, dev, ctx);
+#endif
+#if !defined(ENABLE_CUBLAS_BACKEND) && !defined(ENABLE_ROCBLAS_BACKEND)
+    return sycl::malloc_device(size, dev, ctx);
+#endif
+#endif
+}
+
 static inline void free_shared(void *p, sycl::context ctx) {
+    sycl::free(p, ctx);
+}
+
+static inline void free_usm(void *p, sycl::context ctx) {
     sycl::free(p, ctx);
 }
 

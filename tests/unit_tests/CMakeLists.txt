@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2020-2022 Intel Corporation
+# Copyright 2020-2023 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -124,6 +124,11 @@ foreach(domain ${TARGET_DOMAINS})
     list(APPEND ONEMKL_LIBRARIES_${domain} onemkl_${domain}_netlib)
   endif()
 
+  if(domain STREQUAL "blas" AND ENABLE_SYCLBLAS_BACKEND)
+    add_dependencies(test_main_${domain}_ct onemkl_${domain}_syclblas)
+    list(APPEND ONEMKL_LIBRARIES_${domain} onemkl_${domain}_syclblas)
+  endif()
+
   if(domain STREQUAL "lapack" AND ENABLE_CUSOLVER_BACKEND)
     add_dependencies(test_main_${domain}_ct onemkl_${domain}_cusolver)
     list(APPEND ONEMKL_LIBRARIES_${domain} onemkl_${domain}_cusolver)
@@ -142,6 +147,16 @@ foreach(domain ${TARGET_DOMAINS})
   if(domain STREQUAL "rng" AND ENABLE_ROCRAND_BACKEND)
     add_dependencies(test_main_${domain}_ct onemkl_${domain}_rocrand)
     list(APPEND ONEMKL_LIBRARIES_${domain} onemkl_${domain}_rocrand)
+  endif()
+
+  if(domain STREQUAL "dft" AND ENABLE_CUFFT_BACKEND)
+    add_dependencies(test_main_${domain}_ct onemkl_${domain}_cufft)
+    list(APPEND ONEMKL_LIBRARIES_${domain} onemkl_${domain}_cufft)
+  endif()
+
+  if(domain STREQUAL "dft" AND ENABLE_ROCFFT_BACKEND)
+    add_dependencies(test_main_${domain}_ct onemkl_dft_rocfft)
+    list(APPEND ONEMKL_LIBRARIES_${domain} onemkl_dft_rocfft)
   endif()
 
   target_link_libraries(test_main_${domain}_ct PUBLIC

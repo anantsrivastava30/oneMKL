@@ -1,5 +1,5 @@
 /*******************************************************************************
-* Copyright 2022 Intel Corporation
+* Copyright 2023 Intel Corporation
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -19,6 +19,18 @@
 
 #ifndef _ONEMKL_DFT_HPP_
 #define _ONEMKL_DFT_HPP_
+
+#if __has_include(<sycl/sycl.hpp>)
+#include <sycl/sycl.hpp>
+#else
+#include <CL/sycl.hpp>
+#endif
+#include <complex>
+#include <cstdint>
+
+#include "oneapi/mkl/detail/config.hpp"
+#include "oneapi/mkl/detail/get_device_id.hpp"
+#include "oneapi/mkl/dft/detail/dft_loader.hpp"
 
 #include "oneapi/mkl/dft/descriptor.hpp"
 #include "oneapi/mkl/dft/forward.hpp"

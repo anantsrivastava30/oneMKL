@@ -1,5 +1,9 @@
 /*******************************************************************************
+<<<<<<< HEAD
 * Copyright 2022 Intel Corporation
+=======
+* Copyright 2023 Intel Corporation
+>>>>>>> upstream/develop
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -20,65 +24,19 @@
 #ifndef _ONEMKL_DFT_DESCRIPTOR_HPP_
 #define _ONEMKL_DFT_DESCRIPTOR_HPP_
 
-#if __has_include(<sycl/sycl.hpp>)
-#include <sycl/sycl.hpp>
-#else
-#include <CL/sycl.hpp>
-#endif
-
-#include "oneapi/mkl/types.hpp"
-#include "oneapi/mkl/dft/types.hpp"
-#include "oneapi/mkl/detail/backend_selector.hpp"
-
-#include "oneapi/mkl/dft/detail/descriptor_impl.hpp"
+#include "detail/descriptor_impl.hpp"
+#include "types.hpp"
 
 namespace oneapi {
 namespace mkl {
 namespace dft {
+/** The detail namespace is required since the MKLGPU backend uses identical 
+names and function signatures in many places. **/
 
 template <precision prec, domain dom>
-class descriptor {
-public:
-    // Syntax for 1-dimensional DFT
-    descriptor(std::int64_t length);
-
-    // Syntax for d-dimensional DFT
-    descriptor(std::vector<std::int64_t> dimensions);
-
-    ~descriptor();
-
-    void set_value(config_param param, ...);
-
-    void get_value(config_param param, ...);
-
-    void commit(sycl::queue& queue);
-
-#ifdef ENABLE_MKLCPU_BACKEND
-    void commit(backend_selector<backend::mklcpu> selector);
-#endif
-
-#ifdef ENABLE_MKLGPU_BACKEND
-    void commit(backend_selector<backend::mklgpu> selector);
-#endif
-
-    sycl::queue& get_queue() {
-        return queue_;
-    }
-private:
-    sycl::queue queue_;
-    std::unique_ptr<detail::descriptor_impl> pimpl_;
-
-    std::int64_t rank_;
-    std::vector<std::int64_t>  dimension_;
-
-    // descriptor configuration values and structs
-    void* handle_;
-    oneapi::mkl::dft::dft_values values;
-};
-
-} //namespace dft
-} //namespace mkl
-} //namespace oneapi
-
+using descriptor = detail::descriptor<prec, dom>;
+} // namespace dft
+} // namespace mkl
+} // namespace oneapi
 
 #endif // _ONEMKL_DFT_DESCRIPTOR_HPP_

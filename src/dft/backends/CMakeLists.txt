@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2022 Intel Corporation
+# Copyright 2023 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,4 +23,12 @@ endif()
 
 if(ENABLE_MKLCPU_BACKEND)
   add_subdirectory(mklcpu)
+endif()
+
+if(ENABLE_CUFFT_BACKEND)
+  add_subdirectory(cufft)
+endif()
+
+if(ENABLE_ROCFFT_BACKEND)
+  add_subdirectory(rocfft)
 endif()

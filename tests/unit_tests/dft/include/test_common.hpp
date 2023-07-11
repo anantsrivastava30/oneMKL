@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <limits>
+#include <stdexcept>
 #include <vector>
 
 #if __has_include(<sycl/sycl.hpp>)
@@ -49,6 +50,13 @@ constexpr bool is_complex() {
     return complex_info<T>::is_complex;
 }
 
+inline std::size_t cast_unsigned(std::int64_t i) {
+    if (i < 0) {
+        throw std::runtime_error("Unexpected negative value");
+    }
+    return static_cast<std::size_t>(i);
+}
+
 template <typename fp>
 bool check_equal(fp x, fp x_ref, double abs_error_mag, double rel_error_mag, std::ostream &out) {
     using fp_real = typename complex_info<fp>::real_type;
@@ -65,31 +73,35 @@ bool check_equal(fp x, fp x_ref, double abs_error_mag, double rel_error_mag, std
             return std::numeric_limits<fp_real>::epsilon();
         }
     }();
-    const fp_real abs_bound = abs_error_mag * epsilon;
-    const fp_real rel_bound = rel_error_mag * epsilon;
+    const auto abs_bound = static_cast<fp_real>(abs_error_mag) * epsilon;
+    const auto rel_bound = static_cast<fp_real>(rel_error_mag) * epsilon;
 
     const auto aerr = std::abs(x - x_ref);
     const auto rerr = aerr / std::abs(x_ref);
     const bool ok = (rerr <= rel_bound) || (aerr <= abs_bound);
     if (!ok) {
         out << "Mismatching results: actual = " << x << " vs. reference = " << x_ref << "\n";
-        out << " relative error = " << rerr
-            << " absolute error = " << aerr
-            << " relative bound = " << rel_bound
-            << " absolute bound = " << abs_bound
-            << "\n";
+        out << " relative error = " << rerr << " absolute error = " << aerr
+            << " relative bound = " << rel_bound << " absolute bound = " << abs_bound << "\n";
     }
     return ok;
 }
 
 template <typename vec1, typename vec2>
-bool check_equal_vector(vec1 &&v, vec2 &&v_ref, int n, double abs_error_mag, double rel_error_mag, std::ostream &out) {
+bool check_equal_vector(vec1 &&v, vec2 &&v_ref, std::size_t n, double abs_error_mag,
+                        double rel_error_mag, std::ostream &out) {
     constexpr int max_print = 20;
     int count = 0;
     bool good = true;
 
     for (std::size_t i = 0; i < n; ++i) {
-        if (!check_equal(v[i], v_ref[i], abs_error_mag, rel_error_mag, out)) {
+        // Allow to convert the unsigned index `i` to a signed one to keep this function generic and allow for `v` and `v_ref` to be a vector, a pointer or a random access iterator.
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wsign-conversion"
+        auto res = v[i];
+        auto ref = v_ref[i];
+#pragma clang diagnostic pop
+        if (!check_equal(res, ref, abs_error_mag, rel_error_mag, out)) {
             out << " at index i =" << i << "\n";
             good = false;
             ++count;
@@ -119,10 +131,10 @@ inline t rand_scalar() {
 }
 
 template <typename vec>
-void rand_vector(vec &v, int n) {
+void rand_vector(vec &v, std::size_t n) {
     using fp = typename vec::value_type;
     v.resize(n);
-    for (int i = 0; i < n; i++) {
+    for (std::size_t i = 0; i < n; i++) {
         v[i] = rand_scalar<fp>();
     }
 }
@@ -150,17 +162,73 @@ void commit_descriptor(oneapi::mkl::dft::descriptor<precision, domain> &descript
 #endif
 }
 
-class DimensionsDeviceNamePrint {
+// is it assumed that the unused elements of the array are ignored
+inline std::array<std::int64_t, 4> get_conjugate_even_complex_strides(
+    const std::vector<std::int64_t> &sizes) {
+    switch (sizes.size()) {
+        case 1: return { 0, 1 };
+        case 2: return { 0, sizes[1] / 2 + 1, 1 };
+        case 3: return { 0, sizes[1] * (sizes[2] / 2 + 1), (sizes[2] / 2 + 1), 1 };
+        default:
+            throw oneapi::mkl::unimplemented(
+                "dft/test_common", __FUNCTION__,
+                "not implemented for " + std::to_string(sizes.size()) + " dimensions");
+            return {};
+    }
+}
+
+// is it assumed that the unused elements of the array are ignored
+inline std::array<std::int64_t, 4> get_default_strides(const std::vector<std::int64_t> &sizes) {
+    if (sizes.size() > 3) {
+        throw oneapi::mkl::unimplemented(
+            "dft/test_common", __FUNCTION__,
+            "not implemented for " + std::to_string(sizes.size()) + " dimensions");
+    }
+
+    switch (sizes.size()) {
+        case 1: return { 0, 1 };
+        case 2: return { 0, sizes[1], 1 };
+        case 3: return { 0, sizes[1] * sizes[2], sizes[2], 1 };
+        default:
+            throw oneapi::mkl::unimplemented(
+                "dft/test_common", __FUNCTION__,
+                "not implemented for " + std::to_string(sizes.size()) + " dimensions");
+            return {};
+    }
+}
+
+struct DFTParams {
+    std::vector<std::int64_t> sizes;
+    std::int64_t batches;
+};
+
+class DFTParamsPrint {
 public:
     std::string operator()(
-        testing::TestParamInfo<std::tuple<sycl::device *, std::int64_t>> dev) const {
-        std::string size = "size_" + std::to_string(std::get<1>(dev.param));
-        std::string dev_name = std::get<0>(dev.param)->get_info<sycl::info::device::name>();
-        for (std::string::size_type i = 0; i < dev_name.size(); ++i) {
-            if (!isalnum(dev_name[i]))
-                dev_name[i] = '_';
-        }
-        return size.append("_").append(dev_name);
+        testing::TestParamInfo<std::tuple<sycl::device *, DFTParams>> dev) const {
+        auto [device, params] = dev.param;
+        auto [sizes, batches] = params;
+        std::string info_name;
+
+        assert(sizes.size() > 0);
+        info_name.append("sizes_");
+
+        // intersperse dimensions with "x"
+        std::for_each(sizes.begin(), sizes.end() - 1,
+                      [&info_name](auto s) { info_name.append(std::to_string(s)).append("x"); });
+        info_name.append(std::to_string(sizes.back()));
+
+        info_name.append("_batches_").append(std::to_string(batches));
+
+        std::string dev_name = device->get_info<sycl::info::device::name>();
+        std::for_each(dev_name.begin(), dev_name.end(), [](auto &c) {
+            if (!isalnum(c))
+                c = '_';
+        });
+
+        info_name.append("_").append(dev_name);
+
+        return info_name;
     }
 };
 

@@ -41,20 +41,30 @@ endif()
 option(BUILD_SHARED_LIBS "Build dynamic libraries" ON)
 
 ## Backends
-option(ENABLE_MKLCPU_BACKEND "" ON)
-option(ENABLE_MKLGPU_BACKEND "" ON)
+option(ENABLE_MKLCPU_BACKEND "Enable the Intel oneMKL CPU backend for supported interfaces" ON)
+option(ENABLE_MKLGPU_BACKEND "Enable the Intel oneMKL GPU backend for supported interfaces" ON)
 if(ENABLE_MKLCPU_BACKEND)
-  option(ENABLE_MKLCPU_THREAD_TBB "" ON)
+  option(ENABLE_MKLCPU_THREAD_TBB "Enable the use of Intel TBB with the oneMKL CPU backend" ON)
 endif()
-option(ENABLE_CUBLAS_BACKEND "" OFF)
 
-option(ENABLE_CUSOLVER_BACKEND "" OFF)
+# blas
+option(ENABLE_CUBLAS_BACKEND "Enable the cuBLAS backend for the BLAS interface" OFF)
+option(ENABLE_ROCBLAS_BACKEND "Enable the rocBLAS backend for the BLAS interface" OFF)
+option(ENABLE_NETLIB_BACKEND "Enable the Netlib backend for the BLAS interface" OFF)
 
-option(ENABLE_ROCBLAS_BACKEND "" OFF)
-option(ENABLE_CURAND_BACKEND "" OFF)
-option(ENABLE_ROCRAND_BACKEND "" OFF)
-option(ENABLE_ROCSOLVER_BACKEND "" OFF)
-option(ENABLE_NETLIB_BACKEND "" OFF)
+# rand
+option(ENABLE_CURAND_BACKEND "Enable the cuRAND backend for the RNG interface" OFF)
+option(ENABLE_ROCRAND_BACKEND "Enable the rocRAND backend for the RNG interface" OFF)
+
+# lapack
+option(ENABLE_CUSOLVER_BACKEND "Enable the cuSOLVER backend for the LAPACK interface" OFF)
+option(ENABLE_ROCSOLVER_BACKEND "Enable the rocSOLVER backend for the LAPACK interface" OFF)
+
+# dft
+option(ENABLE_CUFFT_BACKEND "Enable the cuFFT backend for the DFT interface" OFF)
+option(ENABLE_ROCFFT_BACKEND "Enable the rocFFT backend for the DFT interface" OFF)
+
+
 set(ONEMKL_SYCL_IMPLEMENTATION "dpc++" CACHE STRING "Name of the SYCL compiler")
 set(HIP_TARGETS "" CACHE STRING "Target HIP architectures")
 
@@ -73,7 +83,8 @@ if(ENABLE_MKLCPU_BACKEND
         OR ENABLE_MKLGPU_BACKEND
         OR ENABLE_CUBLAS_BACKEND
         OR ENABLE_ROCBLAS_BACKEND
-        OR ENABLE_NETLIB_BACKEND)
+        OR ENABLE_NETLIB_BACKEND
+        OR ENABLE_SYCLBLAS_BACKEND)
   list(APPEND DOMAINS_LIST "blas")
 endif()
 if(ENABLE_MKLCPU_BACKEND
@@ -89,8 +100,19 @@ if(ENABLE_MKLCPU_BACKEND
   list(APPEND DOMAINS_LIST "rng")
 endif()
 if(ENABLE_MKLGPU_BACKEND
-        OR ENABLE_MKLCPU_BACKEND)
+        OR ENABLE_MKLCPU_BACKEND
+        OR ENABLE_CUFFT_BACKEND
+	OR ENABLE_ROCFFT_BACKEND)
   list(APPEND DOMAINS_LIST "dft")
+endif()
+
+if(ENABLE_SYCLBLAS_BACKEND AND
+    (ENABLE_MKLCPU_BACKEND OR
+     ENABLE_MKLGPU_BACKEND OR
+     ENABLE_CUBLAS_BACKEND OR
+     ENABLE_ROCBLAS_BACKEND OR
+     ENABLE_NETLIB_BACKEND))
+  message(FATAL_ERROR "SYCL-BLAS backend cannot be enabled with other backends")
 endif()
 
 # Define required CXX compilers before project
@@ -99,8 +121,8 @@ if(CMAKE_CXX_COMPILER OR NOT ONEMKL_SYCL_IMPLEMENTATION STREQUAL "dpc++")
     string(REPLACE "\\" "/" CMAKE_CXX_COMPILER ${CMAKE_CXX_COMPILER})
   endif()
 else()
-  if(ENABLE_CUBLAS_BACKEND OR ENABLE_CURAND_BACKEND OR ENABLE_ROCBLAS_BACKEND
-	  OR ENABLE_ROCRAND_BACKEND OR ENABLE_ROCSOLVER_BACKEND)
+  if(ENABLE_CUBLAS_BACKEND OR ENABLE_CURAND_BACKEND OR ENABLE_CUSOLVER_BACKEND OR ENABLE_CUFFT_BACKEND
+    OR ENABLE_ROCBLAS_BACKEND OR ENABLE_ROCRAND_BACKEND OR ENABLE_ROCSOLVER_BACKEND OR ENABLE_ROCFFT_BACKEND)
     set(CMAKE_CXX_COMPILER "clang++")
   elseif(ENABLE_MKLGPU_BACKEND)
     if(UNIX)
@@ -167,15 +189,14 @@ if(WIN32 AND ONEMKL_SYCL_IMPLEMENTATION STREQUAL "dpc++")
   endforeach()
   set(CMAKE_CXX_COMPILE_OBJECT "<CMAKE_CXX_COMPILER> -fsycl /nologo <DEFINES> <INCLUDES> /EHsc <FLAGS> /Fo<OBJECT> -c <SOURCE>")
   set(CMAKE_CXX_CREATE_STATIC_LIBRARY "lib /nologo <OBJECTS> /out:<TARGET>")
-  set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> -fsycl -fsycl-device-code-split=per_kernel /nologo <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-  find_library(MKL_SYCL_LIB NAMES mkl_sycl
-    HINTS $ENV{MKLROOT} ${MKL_ROOT}
-    PATH_SUFFIXES lib/intel64)
-  set(CMAKE_CXX_CREATE_SHARED_LIBRARY "<CMAKE_CXX_COMPILER> -fsycl -fsycl-device-code-split=per_kernel /nologo <OBJECTS> ${MKL_SYCL_LIB} /link /out:<TARGET> /implib:<TARGET_IMPLIB> /pdb:<TARGET_PDB> /dll /version:<TARGET_VERSION_MAJOR>.<TARGET_VERSION_MINOR> <LINK_FLAGS> <LINK_LIBRARIES>")
+  if(CMAKE_VERSION VERSION_LESS "3.25.2")
+    set(CMAKE_CXX_LINK_EXECUTABLE "<CMAKE_CXX_COMPILER> -fsycl -fsycl-device-code-split=per_kernel /nologo <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+    set(CMAKE_CXX_CREATE_SHARED_LIBRARY "<CMAKE_CXX_COMPILER> -fsycl -fsycl-device-code-split=per_kernel /nologo <OBJECTS> <LINK_LIBRARIES> /link /out:<TARGET> /implib:<TARGET_IMPLIB> /pdb:<TARGET_PDB> /dll /version:<TARGET_VERSION_MAJOR>.<TARGET_VERSION_MINOR>")
+  endif()
 endif()
 
-# Temporary disable sycl 2020 deprecations warnings for cuBLAS and cuSOLVER
-if(ONEMKL_SYCL_IMPLEMENTATION STREQUAL "dpc++" AND (ENABLE_CUBLAS_BACKEND OR ENABLE_CUSOLVER_BACKEND OR ENABLE_ROCSOLVER_BACKEND))
+# Temporary disable sycl 2020 deprecations warnings for cuSOLVER and rocSOLVER
+if(ONEMKL_SYCL_IMPLEMENTATION STREQUAL "dpc++" AND (ENABLE_CUSOLVER_BACKEND OR ENABLE_ROCSOLVER_BACKEND))
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSYCL2020_DISABLE_DEPRECATION_WARNINGS")
 endif()
 
@@ -199,6 +220,30 @@ else()
   endif()
 endif()
 message(STATUS "TARGET_DOMAINS: ${TARGET_DOMAINS}")
+
+# Include Intel oneMKL
+if(ENABLE_MKLGPU_BACKEND OR ENABLE_MKLCPU_BACKEND)
+  set(MKL_ARCH intel64)
+  set(MKL_INTERFACE ilp64)
+  if(ENABLE_MKLCPU_THREAD_TBB)
+    set(MKL_THREADING tbb_thread)
+  else()
+    set(MKL_THREADING sequential)
+  endif()
+  if(BUILD_SHARED_LIBS AND NOT WIN32)
+    set(MKL_LINK dynamic)
+  else()
+    set(MKL_LINK static)
+  endif()
+  # Enable SYCL API
+  set(DPCPP_COMPILER ON)
+  # In case Intel oneMKL package doesn't include MKLConfig,
+  # use MKLConfig from the repo
+  find_package(MKL REQUIRED
+          HINTS ${MKL_ROOT}/lib/cmake
+                ${MKL_ROOT}/lib/cmake/mkl
+                ${PROJECT_SOURCE_DIR}/cmake/mkl)
+endif()
 
 # Set output directories for the project
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)

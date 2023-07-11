@@ -36,18 +36,27 @@ enum class backend {
     netlib,
     rocblas,
     rocrand,
+    syclblas,
+    cufft,
+    rocfft,
     unsupported
 };
 
 typedef std::map<backend, std::string> backendmap;
 
-static backendmap backend_map = {
-    { backend::mklcpu, "mklcpu" },       { backend::mklgpu, "mklgpu" },
-    { backend::cublas, "cublas" },       { backend::cusolver, "cusolver" },
-    { backend::curand, "curand" },       { backend::netlib, "netlib" },
-    { backend::rocblas, "rocblas" },     { backend::rocrand, "rocrand" },
-    { backend::rocsolver, "rocsolver" }, { backend::unsupported, "unsupported" }
-};
+static backendmap backend_map = { { backend::mklcpu, "mklcpu" },
+                                  { backend::mklgpu, "mklgpu" },
+                                  { backend::cublas, "cublas" },
+                                  { backend::cusolver, "cusolver" },
+                                  { backend::curand, "curand" },
+                                  { backend::netlib, "netlib" },
+                                  { backend::rocblas, "rocblas" },
+                                  { backend::rocrand, "rocrand" },
+                                  { backend::rocsolver, "rocsolver" },
+                                  { backend::syclblas, "syclblas" },
+                                  { backend::cufft, "cufft" },
+                                  { backend::rocfft, "rocfft" },
+                                  { backend::unsupported, "unsupported" } };
 
 } //namespace mkl
 } //namespace oneapi

@@ -18,8 +18,8 @@ oneMKL is part of [oneAPI](https://oneapi.io).
     </thead>
     <tbody>
         <tr>
-            <td rowspan=10 align="center">oneMKL interface</td>
-            <td rowspan=10 align="center">oneMKL selector</td>
+            <td rowspan=12 align="center">oneMKL interface</td>
+            <td rowspan=12 align="center">oneMKL selector</td>
             <td align="center"><a href="https://software.intel.com/en-us/oneapi/onemkl">Intel(R) oneAPI Math Kernel Library</a> for x86 CPU</td>
             <td align="center">x86 CPU</td>
         </tr>
@@ -40,6 +40,10 @@ oneMKL is part of [oneAPI](https://oneapi.io).
             <td align="center">NVIDIA GPU</td>
         </tr>
         <tr>
+            <td align="center"><a href="https://developer.nvidia.com/cufft"> NVIDIA cuFFT</a> for NVIDIA GPU </td>
+            <td align="center">NVIDIA GPU</td>
+        </tr>
+        <tr>
             <td align="center"><a href="https://ww.netlib.org"> NETLIB LAPACK</a> for x86 CPU </td>
             <td align="center">x86 CPU</td>
         </tr>
@@ -54,6 +58,14 @@ oneMKL is part of [oneAPI](https://oneapi.io).
         <tr>
             <td align="center"><a href="https://github.com/ROCmSoftwarePlatform/rocRAND"> AMD rocRAND</a> for AMD GPU </td>
             <td align="center">AMD GPU</td>
+        </tr>
+        <tr>
+            <td align="center"><a href="https://github.com/ROCmSoftwarePlatform/rocFFT">AMD rocFFT</a> for AMD GPU </td>
+            <td align="center">AMD GPU</td>
+        </tr>
+        <tr>
+            <td align="center"><a href="https://github.com/codeplaysoftware/sycl-blas"> SYCL-BLAS </a></td>
+            <td align="center">x86 CPU, Intel GPU, NVIDIA GPU, AMD GPU</td>
         </tr>
     </tbody>
 </table>
@@ -130,7 +142,7 @@ $> clang++ -fsycl app.o –L$ONEMKL/lib –lonemkl_blas_mklcpu –lonemkl_blas_c
 
 ### Supported Configurations:
 
-Supported domains: BLAS, LAPACK, RNG
+Supported domains: BLAS, LAPACK, RNG, DFT
 
 #### Linux*
 
@@ -146,7 +158,7 @@ Supported domains: BLAS, LAPACK, RNG
     </thead>
     <tbody>
         <tr>
-            <td rowspan=5 align="center">BLAS</td>
+            <td rowspan=6 align="center">BLAS</td>
             <td align="center">x86 CPU</td>
             <td rowspan=2 align="center">Intel(R) oneAPI Math Kernel Library</td>
             <td align="center">Dynamic, Static</td>
@@ -174,6 +186,12 @@ Supported domains: BLAS, LAPACK, RNG
             <td align="center">AMD rocBLAS</td>
             <td align="center">Dynamic, Static</td>
             <td align="center">LLVM*, hipSYCL</td>
+        </tr>
+	    <tr >
+            <td align="center">x86 CPU, Intel GPU, NVIDIA GPU, AMD GPU</td>
+            <td align="center">SYCL-BLAS</td>
+            <td align="center">Dynamic, Static</td>
+            <td align="center">DPC++, LLVM*</td>
         </tr>
         <tr>
             <td rowspan=4 align="center">LAPACK</td>
@@ -222,6 +240,30 @@ Supported domains: BLAS, LAPACK, RNG
             <td align="center">AMD rocRAND</td>
             <td align="center">Dynamic, Static</td>
             <td align="center">LLVM*, hipSYCL</td>
+        </tr>
+        <tr>
+            <td rowspan=4 align="center">DFT</td>
+            <td align="center">Intel GPU</td>
+            <td rowspan=2 align="center">Intel(R) oneAPI Math Kernel Library</td>
+            <td align="center">Dynamic, Static</td>
+            <td align="center">DPC++</td>
+        </tr>
+        <tr>
+            <td align="center">x86 CPU</td>
+            <td align="center">Dynamic, Static</td>
+            <td align="center">DPC++</td>
+        </tr>
+        <tr>
+            <td align="center">NVIDIA GPU</td>
+            <td align="center">NVIDIA cuFFT</td>
+            <td align="center">Dynamic, Static</td>
+            <td align="center">DPC++</td>
+        </tr>
+        <tr>
+            <td align="center">AMD GPU</td>
+            <td align="center">AMD rocFFT</td>
+            <td align="center">Dynamic, Static</td>
+            <td align="center">DPC++</td>
         </tr>
     </tbody>
 </table>
@@ -432,8 +474,10 @@ Python | 3.6 or higher | No | *N/A* | *Pre-installed or Installed by user* | [PS
 [AMD rocBLAS](https://rocblas.readthedocs.io/en/rocm-4.5.2/) | 4.5 | No | *N/A* | *Installed by user* |[AMD License](https://github.com/ROCmSoftwarePlatform/rocBLAS/blob/develop/LICENSE.md)
 [AMD rocRAND](https://github.com/ROCmSoftwarePlatform/rocRAND) | 5.1.0 | No | *N/A* | *Installed by user* |[AMD License](https://github.com/ROCmSoftwarePlatform/rocRAND/blob/develop/LICENSE.txt)
 [AMD rocSOLVER](https://github.com/ROCmSoftwarePlatform/rocSOLVER) | 5.0.0 | No | *N/A* | *Installed by user* |[AMD License](https://github.com/ROCmSoftwarePlatform/rocRAND/blob/develop/LICENSE.txt)
+[AMD rocFFT](https://github.com/ROCmSoftwarePlatform/rocFFT) | rocm-5.4.3 | No | *N/A* | *Installed by user* |[AMD License](https://github.com/ROCmSoftwarePlatform/rocFFT/blob/rocm-5.4.3/LICENSE.md)
 [NETLIB LAPACK](https://www.netlib.org/) | 3.7.1 | Yes | conan-community | ~/.conan/data or $CONAN_USER_HOME/.conan/data | [BSD like license](http://www.netlib.org/lapack/LICENSE.txt)
 [Sphinx](https://www.sphinx-doc.org/en/master/) | 2.4.4 | Yes | pip | ~/.local/bin (or similar user local directory) | [BSD License](https://github.com/sphinx-doc/sphinx/blob/3.x/LICENSE)
+[SYCL-BLAS](https://github.com/codeplaysoftware/sycl-blas) | 0.1 | No | *N/A* | *Installed by user* | [Apache License v2.0](https://github.com/codeplaysoftware/sycl-blas/blob/master/LICENSE)
 
 *conan-center: https://api.bintray.com/conan/conan/conan-center*
 

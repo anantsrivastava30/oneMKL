@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2022 Intel Corporation
+# Copyright 2023 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@
 
 set(DFT_SOURCES "compute_tests.cpp" "descriptor_tests.cpp")
 
+include(WarningsUtils)
+
 if (BUILD_SHARED_LIBS)
     add_library(dft_source_rt OBJECT ${DFT_SOURCES})
     target_compile_options(dft_source_rt PRIVATE -DCALL_RT_API -DNOMINMAX)
@@ -28,13 +30,13 @@ if (BUILD_SHARED_LIBS)
             PUBLIC ${PROJECT_SOURCE_DIR}/include
             PUBLIC ${PROJECT_SOURCE_DIR}/deps/googletest/include
             PUBLIC ${CMAKE_BINARY_DIR}/bin
-            PUBLIC ${CBLAS_INCLUDE}
             )
     if (USE_ADD_SYCL_TO_TARGET_INTEGRATION)
         add_sycl_to_target(TARGET dft_source_rt SOURCES ${DFT_SOURCES})
     else ()
         target_link_libraries(dft_source_rt PUBLIC ONEMKL::SYCL::SYCL)
     endif ()
+    target_link_libraries(dft_source_rt PRIVATE onemkl_warnings)
 endif ()
 
 add_library(dft_source_ct OBJECT ${DFT_SOURCES})
@@ -45,15 +47,11 @@ target_include_directories(dft_source_ct
         PUBLIC ${PROJECT_SOURCE_DIR}/include
         PUBLIC ${PROJECT_SOURCE_DIR}/deps/googletest/include
         PUBLIC ${CMAKE_BINARY_DIR}/bin
-        PUBLIC ${CBLAS_INCLUDE}
         )
 if (USE_ADD_SYCL_TO_TARGET_INTEGRATION)
     add_sycl_to_target(TARGET dft_source_ct SOURCES ${DFT_SOURCES})
-    target_link_libraries(dft_source_ct PUBLIC onemkl)
 else ()
-    target_link_libraries(dft_source_ct PUBLIC
-            onemkl
-            ONEMKL::SYCL::SYCL
-            )
+    target_link_libraries(dft_source_ct PUBLIC ONEMKL::SYCL::SYCL)
 endif ()
+target_link_libraries(dft_source_ct PRIVATE onemkl_warnings)
 

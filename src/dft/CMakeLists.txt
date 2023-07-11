@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2022 Intel Corporation
+# Copyright 2023 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ add_subdirectory(backends)
 # Recipe for DFT loader object
 if(BUILD_SHARED_LIBS)
 add_library(onemkl_dft OBJECT)
-target_sources(onemkl_dft PRIVATE dft_loader.cpp)
+target_sources(onemkl_dft PRIVATE backends/descriptor.cpp dft_loader.cpp)
 target_include_directories(onemkl_dft
   PRIVATE ${PROJECT_SOURCE_DIR}/include
           ${PROJECT_SOURCE_DIR}/src
@@ -38,9 +38,12 @@ set_target_properties(onemkl_dft PROPERTIES
   POSITION_INDEPENDENT_CODE ON
 )
 if (USE_ADD_SYCL_TO_TARGET_INTEGRATION)
-  add_sycl_to_target(TARGET onemkl_dft SOURCES dft_loader.cpp)
+  add_sycl_to_target(TARGET onemkl_dft SOURCES backends/descriptor.cxx dft_loader.cpp)
 else()
   target_link_libraries(onemkl_dft PUBLIC ONEMKL::SYCL::SYCL)
 endif()
+
+include(WarningsUtils)
+target_link_libraries(onemkl_dft PRIVATE onemkl_warnings)
 
 endif()

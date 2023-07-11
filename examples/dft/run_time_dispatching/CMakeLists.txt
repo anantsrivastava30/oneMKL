@@ -1,5 +1,5 @@
 #===============================================================================
-# Copyright 2022 Intel Corporation
+# Copyright 2023 Intel Corporation
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,19 +18,17 @@
 #===============================================================================
 
 # NOTE: user needs to set env var SYCL_DEVICE_FILTER to use runtime example (no need to specify backend when building with CMake)
+include(WarningsUtils)
+
 
 # Build object from all example sources
-set(DFT_RT_SOURCES "complex_fwd_usm")
-
+set(DFT_RT_SOURCES "")
 # Set up for the right backend for run-time dispatching examples
 # If users build more than one backend (i.e. mklcpu and mklgpu, or mklcpu and CUDA), they may need to
 # overwrite SYCL_DEVICE_FILTER in their environment to run on the desired backend
 set(DEVICE_FILTERS "")
-if(ENABLE_MKLCPU_BACKEND)
-  list(APPEND DEVICE_FILTERS "cpu")
-endif()
-# RNG only supports mklcpu backend on Windows
-if(UNIX AND ENABLE_MKLGPU_BACKEND)
+if(ENABLE_MKLGPU_BACKEND OR ENABLE_CUFFT_BACKEND OR ENABLE_ROCFFT_BACKEND)
+  list(APPEND DFT_RT_SOURCES "real_fwd_usm")
   list(APPEND DEVICE_FILTERS "gpu")
 endif()
 
@@ -50,10 +48,11 @@ foreach(dft_rt_sources ${DFT_RT_SOURCES})
     add_sycl_to_target(TARGET example_${domain}_${dft_rt_sources} SOURCES ${DFT_RT_SOURCES})
   endif()
 
-  target_link_libraries(example_${domain}_${dft_rt_sources} PUBLIC
-      onemkl
-      ONEMKL::SYCL::SYCL
-      ${CMAKE_DL_LIBS}
+  target_link_libraries(example_${domain}_${dft_rt_sources}
+      PUBLIC onemkl
+      PUBLIC ONEMKL::SYCL::SYCL
+      PUBLIC ${CMAKE_DL_LIBS}
+      PRIVATE onemkl_warnings
   )
 
   # Register example as ctest

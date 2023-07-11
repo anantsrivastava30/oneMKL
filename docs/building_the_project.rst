@@ -293,7 +293,7 @@ Building for oneMKL
               [-DREF_LAPACK_ROOT=<reference_lapack_install_prefix>]      # required only for testing
      cmake --build .
      ctest
-     cmake --install . --prefix <path_to_install_dir>
+     cmake --install . --prefix <path_to_install_dir>                    # required to have full package structure
 
 * On Windows*
 
@@ -308,7 +308,7 @@ Building for oneMKL
                        [-DREF_LAPACK_ROOT=<reference_lapack_install_prefix>]      # required only for testing
      ninja 
      ctest
-     cmake --install . --prefix <path_to_install_dir>
+     cmake --install . --prefix <path_to_install_dir>                             # required to have full package structure
 
 Building for CUDA (with hipSYCL)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -331,7 +331,7 @@ With the cuBLAS backend:
             [-DREF_BLAS_ROOT=<reference_blas_install_prefix>]            # required only for testing
    cmake --build .
    ctest
-   cmake --install . --prefix <path_to_install_dir>
+   cmake --install . --prefix <path_to_install_dir>                      # required to have full package structure
 
 To build with the cuRAND backend instead simply replace:
 
@@ -365,7 +365,7 @@ With the cuBLAS backend:
             [-DREF_BLAS_ROOT=<reference_blas_install_prefix>]              # required only for testing
    cmake --build .
    ctest
-   cmake --install . --prefix <path_to_install_dir>
+   cmake --install . --prefix <path_to_install_dir>                        # required to have full package structure
 
 To build with the cuRAND backend instead simply replace:
 
@@ -402,7 +402,7 @@ With the AMD rocBLAS backend:
             [-DREF_BLAS_ROOT=<reference_blas_install_prefix>]   # required only for testing
    cmake --build .
    ctest
-   cmake --install . --prefix <path_to_install_dir>
+   cmake --install . --prefix <path_to_install_dir>             # required to have full package structure
 
 To build with the rocRAND backend instead simply replace:
 
@@ -441,7 +441,7 @@ With the AMD rocBLAS backend:
    cmake --build .
    export SYCL_DEVICE_FILTER=HIP
    ctest
-   cmake --install . --prefix <path_to_install_dir>
+   cmake --install . --prefix <path_to_install_dir>                        # required to have full package structure
 
 To build with the rocRAND backend instead simply replace:
 
@@ -489,6 +489,51 @@ A few often-used architectures are listed below:
    * - gfx900
      - | Radeon Instinct(TM) MI 25 Accelerator
        | Radeon(TM) RX Vega 64/56 Graphics
+
+Building for SYCL-BLAS
+^^^^^^^^^^^^^^^^^^^^^^
+
+Note the SYCL-BLAS backend is experimental and currently only supports a
+subset of the operations and features. The SYCL-BLAS backend cannot be enabled
+with other backends and can only be used with the compile time dispatch.
+The SYCL-BLAS backend uses the `SYCL-BLAS <https://github.com/codeplaysoftware/sycl-blas>`_
+project as a header-only library.
+
+* On Linux*
+
+.. code-block:: bash
+
+   # Inside <path to onemkl>
+   mkdir build && cd build
+   cmake .. -DENABLE_SYCLBLAS_BACKEND=ON \
+            -DENABLE_MKLCPU_BACKEND=OFF  \
+            -DENABLE_MKLGPU_BACKEND=OFF  \
+            -DTARGET_DOMAINS=blas \
+            [-DREF_BLAS_ROOT=<reference_blas_install_prefix>] \ # required only for testing
+            [-Dsycl_blas_DIR=<path to SYCL-BLAS install directory>]
+   cmake --build .
+   ./bin/test_main_blas_ct
+   cmake --install . --prefix <path_to_install_dir>
+
+
+SYCL-BLAS will be downloaded automatically if not found.
+By default, the SYCL-BLAS backend is not tuned for any specific device which
+will impact performance.
+SYCL-BLAS can be tuned for a specific hardware target by adding compiler
+definitions in 2 ways:
+
+#.
+  Manually specify a tuning target with ``-DSYCLBLAS_TUNING_TARGET=<target>``.
+  The list of SYCL-BLAS targets can be found
+  `here <https://github.com/codeplaysoftware/sycl-blas#cmake-options>`_.
+  This will automatically set ``-fsycl-targets`` if needed.
+#.
+  If one target is set via ``-fsycl-targets`` the configuration step will
+  try to automatically detect the SYCL-BLAS tuning target. One can manually
+  specify ``-fsycl-targets`` via ``CMAKE_CXX_FLAGS``. See
+  `DPC++ User Manual <https://intel.github.io/llvm-docs/UsersManual.html>`_
+  for more information on ``-fsycl-targets``.
+
 
 Build Options
 ^^^^^^^^^^^^^
@@ -551,6 +596,10 @@ CMake.
      - ENABLE_MKLCPU_THREAD_TBB
      - True, False
      - True      
+   * - *Not Supported*
+     - ENABLE_SYCLBLAS_BACKEND
+     - True, False
+     - False      
    * - build_functional_tests
      - BUILD_FUNCTIONAL_TESTS
      - True, False
@@ -565,7 +614,7 @@ CMake.
      - False     
    * - target_domains (list)
      - TARGET_DOMAINS (list)
-     - blas, lapack, rng
+     - blas, lapack, rng, dft
      - All domains 
 
 .. note::
